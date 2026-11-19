@@ -23,15 +23,29 @@ if cmd == "up":
         if b"services:" not in data:
             sys.exit(f"La descarga no parece un compose válido ({URL}). Contenido recibido: {data[:120]!r}")
         BASE.write_bytes(data)
-    # El registro de Greenbone responde a veces 502/timeout: compose aborta todo el pull. Se repite cada 60 s.
+    # El registro de Greenbone responde a veces 502/timeout y 'compose pull' aborta TODO al primer error (son ~19
+    # imagenes en paralelo). Se baja imagen por imagen y se reintentan solo las que fallan, hasta 120 min.
+    r = subprocess.run(["docker", "compose", "-p", "greenbone", "-f", str(BASE), "-f", str(HERE / "compose.override.yaml"),
+                        "config", "--images"], capture_output=True, text=True)
+    pendientes = sorted(set(l.strip() for l in r.stdout.splitlines() if l.strip()))
+    if r.returncode or not pendientes:
+        sys.exit("No se pudo obtener la lista de imágenes de Greenbone: " + r.stderr.strip())
     limite = time.time() + 120 * 60
-    intento = 0
-    while dc("pull").returncode != 0:
-        intento += 1
+    ronda = 0
+    while pendientes:
+        ronda += 1
+        fallidas = []
+        for img in pendientes:
+            print(f"\n== {img}", flush=True)
+            if subprocess.run(["docker", "pull", img]).returncode != 0:
+                fallidas.append(img)
+        pendientes = fallidas
+        if not pendientes:
+            break
         if time.time() > limite:
-            sys.exit("No se pudieron descargar las imágenes de Greenbone en 120 min (registry.community.greenbone.net). Revisa tu red o inténtalo más tarde.")
-        print(f"\nLa descarga de imágenes falló (intento {intento}; suele ser un error temporal del registro, p. ej. 502). Reintento en 60 s...", flush=True)
-        time.sleep(60)
+            sys.exit("No se pudieron descargar en 120 min: " + ", ".join(pendientes) + " (registry.community.greenbone.net). Revisa tu red o inténtalo más tarde.")
+        print(f"\nFaltan {len(pendientes)} imágenes (ronda {ronda}; suele ser un error temporal del registro, p. ej. 502). Reintento en 30 s...", flush=True)
+        time.sleep(30)
     # En discos lentos los contenedores de datos tardan en quedar 'healthy' (en un disco mecanico con volumenes
     # nuevos, hasta ~45 min); si compose se rinde antes, deja el scanner (ospd-openvas, openvasd) en estado
     # 'Created' sin arrancar. Se reintenta cada 60 s, hasta 120 min, hasta que arranque todo.
