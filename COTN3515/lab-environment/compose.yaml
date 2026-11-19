@@ -1,0 +1,81 @@
+# Red Faro v2 — laboratorio del Módulo 9 (COTN 3515).
+# Una sola red interna (10.77.0.0/16) con cuatro zonas /24 y un gateway nftables.
+# Estudiantes: docker compose up -d --wait   (descarga la imagen publicada; no construye nada).
+name: redfaro
+
+x-lab: &lab
+  image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+  pull_policy: missing
+  restart: "no"
+
+x-app: &app
+  <<: *lab
+  cap_drop: [ALL]                       # las aplicaciones NO tienen NET_ADMIN
+  security_opt: ["no-new-privileges:true"]
+
+x-holder: &holder                       # titular del espacio de red de una zona
+  <<: *lab
+  command: ["/app/holder-init.sh"]
+  cap_drop: [ALL]
+  cap_add: [NET_ADMIN]
+  healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+
+networks:
+  fabric:
+    internal: true                      # sin salida a Internet ni a la red de la computadora
+    ipam:
+      config: [{subnet: 10.77.0.0/16}]
+
+services:
+  gateway:
+    <<: *lab
+    command: ["/app/gateway-init.sh"]
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN]
+    networks: {fabric: {ipv4_address: 10.77.0.254}}
+    healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+
+  hold-web:
+    <<: *holder
+    environment: {ZONE_IP: 10.77.10.10, ZONE_GW: 10.77.10.254}
+    networks: {fabric: {ipv4_address: 10.77.10.10}}
+    depends_on: {gateway: {condition: service_healthy}}
+  hold-data:
+    <<: *holder
+    environment: {ZONE_IP: 10.77.20.10, ZONE_GW: 10.77.20.254}
+    networks: {fabric: {ipv4_address: 10.77.20.10}}
+    depends_on: {gateway: {condition: service_healthy}}
+  hold-iot:
+    <<: *holder
+    environment: {ZONE_IP: 10.77.30.10, ZONE_GW: 10.77.30.254}
+    networks: {fabric: {ipv4_address: 10.77.30.10}}
+    depends_on: {gateway: {condition: service_healthy}}
+  hold-client:
+    <<: *holder
+    environment: {ZONE_IP: 10.77.40.10, ZONE_GW: 10.77.40.254}
+    networks: {fabric: {ipv4_address: 10.77.40.10}}
+    depends_on: {gateway: {condition: service_healthy}}
+
+  web:
+    <<: *app
+    command: ["python", "/app/redfaro.py", "web"]
+    network_mode: "service:hold-web"
+    depends_on: {hold-web: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/', timeout=2)"], interval: 1s, retries: 120}
+  data:
+    <<: *app
+    command: ["python", "/app/redfaro.py", "data"]
+    network_mode: "service:hold-data"
+    depends_on: {hold-data: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1',5432),2).close()"], interval: 1s, retries: 120}
+  iot:
+    <<: *app
+    command: ["python", "/app/redfaro.py", "iot"]
+    network_mode: "service:hold-iot"
+    depends_on: {hold-iot: {condition: service_healthy}}
+    healthcheck: {test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1',9090),2).close()"], interval: 1s, retries: 120}
+  client:
+    <<: *app
+    command: ["sleep", "infinity"]
+    network_mode: "service:hold-client"
+    depends_on: {hold-client: {condition: service_healthy}}

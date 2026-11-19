@@ -1,0 +1,25 @@
+# Objetivo de escaneo para M2 y M6 (Nmap + evidencia Greenbone congelada).
+#   docker compose -f compose.scan.yaml up -d --wait
+# TARGET_IP = 10.79.0.20. Servicios: ssh 22, http 80, https 443 (autofirmado), 5432 (simulacro TCP, no PostgreSQL).
+name: redfaro-scan
+networks:
+  scan: {internal: true, ipam: {config: [{subnet: 10.79.0.0/24}]}}
+services:
+  target:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["/app/scan-target-init.sh"]
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, NET_BIND_SERVICE, SYS_CHROOT, CHOWN, DAC_OVERRIDE, KILL, FOWNER]
+    volumes: ["./tls:/tls:ro"]
+    networks: {scan: {ipv4_address: 10.79.0.20}}
+    healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+  analyst:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]      # Nmap por defecto usa SYN/ARP (raw) cuando corre como root
+    security_opt: ["no-new-privileges:true"]
+    networks: {scan: {ipv4_address: 10.79.0.10}}
+    depends_on: {target: {condition: service_healthy}}

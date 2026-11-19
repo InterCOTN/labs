@@ -1,0 +1,12 @@
+Nmap scan report for 10.78.0.20
+
+PORT    STATE  SERVICE
+21/tcp  open   ftp
+|_banner: 220 FaroFTP 2.3.4 ready (synthetic)
+22/tcp  open   ssh
+|_banner: SSH-2.0-OpenSSH_6.6.1 FaroSynthetic
+23/tcp  open   telnet
+|_banner: FARO-TELNET (synthetic)\x0D\x0Alogin:
+80/tcp  open   http
+443/tcp closed https
+

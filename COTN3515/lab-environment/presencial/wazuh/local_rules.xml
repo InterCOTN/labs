@@ -1,0 +1,38 @@
+<!-- Reglas SINTÉTICAS del curso (Módulo 7). IDs 100501+ (rango local de Wazuh). Los niveles son
+     de práctica y no corresponden a reglas por defecto de Wazuh. SIN PROBAR contra un Wazuh real. -->
+<group name="redfaro,">
+  <rule id="100501" level="5">
+    <decoded_as>json</decoded_as>
+    <field name="lab">redfaro-m7</field>
+    <field name="service">identity</field>
+    <field name="outcome">rejected</field>
+    <description>Red Faro (lab): identity service rejected authentication</description>
+  </rule>
+  <rule id="100502" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="lab">redfaro-m7</field>
+    <field name="service">identity</field>
+    <field name="outcome">success</field>
+    <description>Red Faro (lab): identity service successful authentication</description>
+  </rule>
+  <rule id="100503" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="lab">redfaro-m7</field>
+    <field name="service">portal</field>
+    <field name="outcome">allowed</field>
+    <description>Red Faro (lab): portal view allowed</description>
+  </rule>
+  <rule id="100504" level="7">
+    <decoded_as>json</decoded_as>
+    <field name="lab">redfaro-m7</field>
+    <field name="service">portal</field>
+    <field name="outcome">denied</field>
+    <description>Red Faro (lab): portal export denied</description>
+  </rule>
+  <rule id="100505" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="lab">redfaro-m7</field>
+    <field name="service">operations</field>
+    <description>Red Faro (lab): operations scheduled activity note</description>
+  </rule>
+</group>

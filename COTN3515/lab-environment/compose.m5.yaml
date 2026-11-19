@@ -1,0 +1,29 @@
+# Laboratorio Módulo 5 (COTN 3515): cuatro endpoints HTTPS sintéticos + estación con OpenSSL.
+#   docker compose -f compose.m5.yaml up -d --wait
+# Hostnames aprobados de ejemplo: portal.lab.test (cadena del CA del laboratorio),
+# wrong.lab.test (certificado para otro nombre), expired.lab.test (vencido), self.lab.test (autofirmado).
+name: redfaro-m5
+x-tls: &tls
+  image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+  pull_policy: missing
+  cap_drop: [ALL]
+  cap_add: [SETUID, SETGID, NET_BIND_SERVICE]
+  security_opt: ["no-new-privileges:true"]
+  volumes: ["./tls:/tls:ro"]
+  healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+networks:
+  lab5: {internal: true, ipam: {config: [{subnet: 10.80.0.0/24}]}}
+services:
+  portal:  {<<: *tls, command: ["/app/nginx-tls.sh","portal"],  networks: {lab5: {ipv4_address: 10.80.0.21, aliases: [portal.lab.test]}}}
+  wrong:   {<<: *tls, command: ["/app/nginx-tls.sh","wrong"],   networks: {lab5: {ipv4_address: 10.80.0.22, aliases: [wrong.lab.test]}}}
+  expired: {<<: *tls, command: ["/app/nginx-tls.sh","expired"], networks: {lab5: {ipv4_address: 10.80.0.23, aliases: [expired.lab.test]}}}
+  self:    {<<: *tls, command: ["/app/nginx-tls.sh","self"],    networks: {lab5: {ipv4_address: 10.80.0.24, aliases: [self.lab.test]}}}
+  analyst:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes: ["./tls/ca.pem:/lab/ca.pem:ro"]
+    networks: {lab5: {ipv4_address: 10.80.0.10}}
+    depends_on: {portal: {condition: service_healthy}, wrong: {condition: service_healthy}, expired: {condition: service_healthy}, self: {condition: service_healthy}}

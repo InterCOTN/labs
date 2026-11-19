@@ -6,10 +6,11 @@ Support scripts for the COTN course labs. **The lab guides, rubrics, and assessm
 | Curso | Carpeta | Contenido |
 |---|---|---|
 | COTN 2150 · Implementación de Aplicaciones de Redes | [`COTN2150/`](COTN2150/) | Preparación del servidor de práctica (Ubuntu 24.04) de los Módulos 4 a 10 |
+| COTN 3515 | [`COTN3515/`](COTN3515/) | Entornos de laboratorio con Docker (Módulos 2 a 10) |
 
 ## Aviso · Notice
-Los scripts crean cuentas y contraseñas **de entrenamiento** para una máquina virtual de práctica. **No los ejecute en un servidor real ni en su computadora principal.** Úselos solo dentro de la VM del curso.
-The scripts create **training** accounts and passwords for a practice virtual machine. **Do not run them on a real server or on your main computer.** Use them only inside the course VM.
+Los scripts y entornos usan cuentas, contraseñas, certificados y datos **sintéticos de entrenamiento**. **No los ejecute en un servidor real ni en su computadora principal.** Úselos solo dentro de la VM del curso.
+The scripts and environments use **synthetic training** accounts, passwords, certificates, and data. **Do not run them on a real server or on your main computer.** Use them only inside the course VM.
 
 ## Licencia · License
 [MIT](LICENSE).

@@ -1,0 +1,19 @@
+id,title,result,rationale,observed
+1001,Ensure SSH root login is disabled,failed,Remote root login increases the impact of credential guessing.,sshd_config: PermitRootLogin yes
+1002,Ensure SSH idle timeout is configured,failed,Idle sessions left open can be reused by another person.,sshd_config: ClientAliveInterval not set
+1003,Ensure SSH protocol uses strong ciphers only,passed,Weak ciphers allow traffic to be decrypted if captured.,sshd_config: strong list present
+1004,Ensure password minimum length is at least 14,failed,Short passwords are easier to guess.,pam_pwquality: minlen=8
+1005,Ensure account lockout after failed logins,passed,Lockout limits repeated guessing.,pam_faillock: deny=5
+1006,Ensure unused filesystems are disabled,passed,Unneeded modules enlarge the attack surface.,modprobe: cramfs disabled
+1007,Ensure /tmp is a separate partition,failed,A separate /tmp can restrict execution and space exhaustion.,mount: /tmp on root filesystem
+1008,Ensure time synchronization is in use,passed,Reliable time supports log correlation.,chrony active
+1009,Ensure the firewall service is active,passed,Host filtering reduces unneeded exposure.,ufw: active
+1010,Ensure auditd is installed,failed,Without audit records some investigations lack evidence.,package auditd: not installed
+1011,Ensure automatic updates are configured,passed,Timely patching reduces known-vulnerability exposure.,unattended-upgrades enabled
+1012,Ensure legacy NIS client is not installed,passed,Legacy services expose weak authentication.,package nis: not installed
+1013,Ensure wireless interfaces are disabled,not applicable,Servers without radios cannot use this exposure.,No wireless hardware detected
+1014,Ensure Bluetooth service is disabled,not applicable,Servers without radios cannot use this exposure.,No bluetooth hardware detected
+1015,Ensure core dumps are restricted,failed,Core dumps may contain sensitive memory contents.,limits: core unlimited
+1016,Ensure sticky bit is set on world-writable directories,passed,Prevents users from deleting others' files.,No exceptions found
+1017,Ensure GRUB bootloader password is set,not applicable,Check depends on physical-access scope not defined for this VM.,Virtual machine; console access governed by hypervisor
+1018,Ensure rsyslog is installed,passed,Local logging supports review.,rsyslog active

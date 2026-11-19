@@ -1,0 +1,145 @@
+{
+ "_notice": "SYNTHETIC TEACHING DATA - not a real Wazuh export, not real CIS content, no real organization.",
+ "organization": "Costa Norte (fictional)",
+ "agent": {
+  "alias": "costa-norte-ubuntu-01",
+  "os": "Ubuntu Server 24.04 LTS"
+ },
+ "policy": {
+  "title": "Faro synthetic Ubuntu baseline (teaching)",
+  "scan_time": "2026-03-02T14:05:00Z"
+ },
+ "summary": {
+  "passed": 9,
+  "failed": 6,
+  "not applicable": 3
+ },
+ "checks": [
+  {
+   "id": 1001,
+   "title": "Ensure SSH root login is disabled",
+   "result": "failed",
+   "rationale": "Remote root login increases the impact of credential guessing.",
+   "observed": "sshd_config: PermitRootLogin yes"
+  },
+  {
+   "id": 1002,
+   "title": "Ensure SSH idle timeout is configured",
+   "result": "failed",
+   "rationale": "Idle sessions left open can be reused by another person.",
+   "observed": "sshd_config: ClientAliveInterval not set"
+  },
+  {
+   "id": 1003,
+   "title": "Ensure SSH protocol uses strong ciphers only",
+   "result": "passed",
+   "rationale": "Weak ciphers allow traffic to be decrypted if captured.",
+   "observed": "sshd_config: strong list present"
+  },
+  {
+   "id": 1004,
+   "title": "Ensure password minimum length is at least 14",
+   "result": "failed",
+   "rationale": "Short passwords are easier to guess.",
+   "observed": "pam_pwquality: minlen=8"
+  },
+  {
+   "id": 1005,
+   "title": "Ensure account lockout after failed logins",
+   "result": "passed",
+   "rationale": "Lockout limits repeated guessing.",
+   "observed": "pam_faillock: deny=5"
+  },
+  {
+   "id": 1006,
+   "title": "Ensure unused filesystems are disabled",
+   "result": "passed",
+   "rationale": "Unneeded modules enlarge the attack surface.",
+   "observed": "modprobe: cramfs disabled"
+  },
+  {
+   "id": 1007,
+   "title": "Ensure /tmp is a separate partition",
+   "result": "failed",
+   "rationale": "A separate /tmp can restrict execution and space exhaustion.",
+   "observed": "mount: /tmp on root filesystem"
+  },
+  {
+   "id": 1008,
+   "title": "Ensure time synchronization is in use",
+   "result": "passed",
+   "rationale": "Reliable time supports log correlation.",
+   "observed": "chrony active"
+  },
+  {
+   "id": 1009,
+   "title": "Ensure the firewall service is active",
+   "result": "passed",
+   "rationale": "Host filtering reduces unneeded exposure.",
+   "observed": "ufw: active"
+  },
+  {
+   "id": 1010,
+   "title": "Ensure auditd is installed",
+   "result": "failed",
+   "rationale": "Without audit records some investigations lack evidence.",
+   "observed": "package auditd: not installed"
+  },
+  {
+   "id": 1011,
+   "title": "Ensure automatic updates are configured",
+   "result": "passed",
+   "rationale": "Timely patching reduces known-vulnerability exposure.",
+   "observed": "unattended-upgrades enabled"
+  },
+  {
+   "id": 1012,
+   "title": "Ensure legacy NIS client is not installed",
+   "result": "passed",
+   "rationale": "Legacy services expose weak authentication.",
+   "observed": "package nis: not installed"
+  },
+  {
+   "id": 1013,
+   "title": "Ensure wireless interfaces are disabled",
+   "result": "not applicable",
+   "rationale": "Servers without radios cannot use this exposure.",
+   "observed": "No wireless hardware detected"
+  },
+  {
+   "id": 1014,
+   "title": "Ensure Bluetooth service is disabled",
+   "result": "not applicable",
+   "rationale": "Servers without radios cannot use this exposure.",
+   "observed": "No bluetooth hardware detected"
+  },
+  {
+   "id": 1015,
+   "title": "Ensure core dumps are restricted",
+   "result": "failed",
+   "rationale": "Core dumps may contain sensitive memory contents.",
+   "observed": "limits: core unlimited"
+  },
+  {
+   "id": 1016,
+   "title": "Ensure sticky bit is set on world-writable directories",
+   "result": "passed",
+   "rationale": "Prevents users from deleting others' files.",
+   "observed": "No exceptions found"
+  },
+  {
+   "id": 1017,
+   "title": "Ensure GRUB bootloader password is set",
+   "result": "not applicable",
+   "rationale": "Check depends on physical-access scope not defined for this VM.",
+   "observed": "Virtual machine; console access governed by hypervisor"
+  },
+  {
+   "id": 1018,
+   "title": "Ensure rsyslog is installed",
+   "result": "passed",
+   "rationale": "Local logging supports review.",
+   "observed": "rsyslog active"
+  }
+ ]
+}

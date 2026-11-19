@@ -1,0 +1,29 @@
+# Laboratorio Módulo 3 (COTN 3515): respaldo y restauración con RTO/RPO.
+#   docker compose -f compose.m3.yaml up -d --wait
+#   docker compose -f compose.m3.yaml exec workstation bash     # aquí se ejecutan los comandos de archivos
+#   docker compose -f compose.m3.yaml stop web | up -d web       # "falla" y "recuperación" del servicio (desde tu terminal)
+# El servicio web es http://web desde la estación (y http://localhost:8080 desde tu computadora).
+# Todo lo destructivo ocurre dentro del volumen "m3lab"; tu computadora no se toca.
+name: redfaro-m3
+volumes:
+  m3lab: {}
+services:
+  web:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["/app/nginx-web.sh"]
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    volumes: ["m3lab:/lab:ro"]
+    ports: ["127.0.0.1:8080:80"]
+    healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+  workstation:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["sleep", "infinity"]
+    working_dir: /lab
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes: ["m3lab:/lab"]
+    environment: {HOME: /lab}

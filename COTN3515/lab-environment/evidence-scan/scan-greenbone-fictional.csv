@@ -1,0 +1,5 @@
+Name,Host,Port,Severity,QoD,Summary,Note
+FICTIONAL: Self-signed certificate on HTTPS service,10.79.0.20,443/tcp,5.0,80,"The HTTPS service presents a self-signed certificate.","Fictional practice value, not a real scan result"
+FICTIONAL: HTTP service without HTTPS redirect,10.79.0.20,80/tcp,2.6,70,"The HTTP service answers without redirecting to HTTPS.","Fictional practice value, not a real scan result"
+FICTIONAL: Password authentication enabled on SSH,10.79.0.20,22/tcp,3.1,95,"SSH accepts password authentication.","Fictional practice value, not a real scan result"
+FICTIONAL: Unidentified service on 5432/tcp,10.79.0.20,5432/tcp,0.0,30,"A TCP service answered but could not be identified.","Fictional; the service is a mock, not PostgreSQL"

@@ -1,0 +1,24 @@
+# Las rutas usan WAZUH_LAB_DIR (la define setup.py): con -f combinados, './' se resolvería
+# contra single-node/ y Docker crearía carpetas vacías en lugar de montar estos archivos.
+# Se combina con single-node/docker-compose.yml de wazuh-docker (tag fijado por setup.py).
+# Añade el endpoint Ubuntu con agente ("costa-norte-ubuntu-01") y lo registra en el manager.
+services:
+  wazuh.manager:
+    volumes:
+      - ${WAZUH_LAB_DIR:?use setup.py}/local_rules.xml:/wazuh-config-mount/etc/rules/local_rules.xml
+  endpoint:
+    image: ${WAZUH_ENDPOINT_IMAGE:-ghcr.io/intercotn/wazuh-endpoint-ubuntu:4.14.6}
+    hostname: costa-norte-ubuntu-01
+    environment:
+      - WAZUH_MANAGER=wazuh.manager
+      - WAZUH_AGENT_NAME=costa-norte-ubuntu-01
+    depends_on:
+      - wazuh.manager
+    volumes:
+      - ${WAZUH_LAB_DIR:?use setup.py}/m7-emit.sh:/usr/local/bin/m7-emit.sh:ro
+      # Conserva la clave del agente entre reinicios (ver endpoint-entry.sh). Se borra con: setup.py reset
+      - endpoint_etc:/var/ossec/etc
+      # Mismo archivo que la imagen; se monta para que el arreglo valga sin republicar la imagen.
+      - ${WAZUH_LAB_DIR:?use setup.py}/endpoint-entry.sh:/entry.sh:ro
+volumes:
+  endpoint_etc:

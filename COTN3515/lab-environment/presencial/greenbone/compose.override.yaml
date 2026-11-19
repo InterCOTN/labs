@@ -1,0 +1,13 @@
+# Se combina con el compose oficial de Greenbone Community Edition (descargado por setup.py).
+# Conecta el escáner a la red del objetivo del curso (10.79.0.0/24) para poder escanear 10.79.0.20.
+# Requisito: el objetivo debe estar encendido primero:
+#   docker compose -f ../../compose.scan.yaml up -d --wait
+networks:
+  scan:
+    external: true
+    name: redfaro-scan_scan
+services:
+  ospd-openvas:
+    networks:
+      - default
+      - scan

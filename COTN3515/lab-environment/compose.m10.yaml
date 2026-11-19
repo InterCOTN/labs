@@ -1,0 +1,26 @@
+# Laboratorio Modulo 10 (COTN 3515): objetivo sintetico aislado + estacion de analisis.
+#   docker compose -f compose.m10.yaml up -d --wait
+name: redfaro-m10
+networks:
+  lab10:
+    internal: true
+    ipam: {config: [{subnet: 10.78.0.0/24}]}
+services:
+  target:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["/app/target10-init.sh"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: {lab10: {ipv4_address: 10.78.0.20}}
+    healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
+  analyst:
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    pull_policy: missing
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]      # solo para capturar (dumpcap) en su propia interfaz
+    volumes: ["./evidence-m10:/evidence:ro"]
+    security_opt: ["no-new-privileges:true"]
+    networks: {lab10: {ipv4_address: 10.78.0.10}}
+    depends_on: {target: {condition: service_healthy}}
