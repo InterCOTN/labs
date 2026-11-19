@@ -23,7 +23,15 @@ if cmd == "up":
         if b"services:" not in data:
             sys.exit(f"La descarga no parece un compose válido ({URL}). Contenido recibido: {data[:120]!r}")
         BASE.write_bytes(data)
-    dc("pull")
+    # El registro de Greenbone responde a veces 502/timeout: compose aborta todo el pull. Se repite cada 60 s.
+    limite = time.time() + 120 * 60
+    intento = 0
+    while dc("pull").returncode != 0:
+        intento += 1
+        if time.time() > limite:
+            sys.exit("No se pudieron descargar las imágenes de Greenbone en 120 min (registry.community.greenbone.net). Revisa tu red o inténtalo más tarde.")
+        print(f"\nLa descarga de imágenes falló (intento {intento}; suele ser un error temporal del registro, p. ej. 502). Reintento en 60 s...", flush=True)
+        time.sleep(60)
     # En discos lentos los contenedores de datos tardan en quedar 'healthy' (en un disco mecanico con volumenes
     # nuevos, hasta ~45 min); si compose se rinde antes, deja el scanner (ospd-openvas, openvasd) en estado
     # 'Created' sin arrancar. Se reintenta cada 60 s, hasta 120 min, hasta que arranque todo.
