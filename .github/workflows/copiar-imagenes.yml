@@ -1,0 +1,33 @@
+# Copia (sin reconstruir) las imágenes de los laboratorios de COTN 3515 a este espacio (ghcr.io/intercotn).
+# Es una copia exacta del manifiesto: las imágenes quedan con el mismo contenido y el mismo digest.
+# Ejecutar a mano: pestaña Actions > "Copiar imágenes del laboratorio" > Run workflow.
+# Después hay que poner cada paquete en "Public" (Packages > el paquete > Package settings > Change visibility).
+name: Copiar imágenes del laboratorio
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  copiar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copiar redfaro-lab
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/intercotn/redfaro-lab:1.0.1 \
+            ghcr.io/rodrigus32/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb
+      - name: Copiar wazuh-endpoint-ubuntu
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/intercotn/wazuh-endpoint-ubuntu:4.14.6 \
+            ghcr.io/rodrigus32/wazuh-endpoint-ubuntu:4.14.6
+      - name: Mostrar digests
+        run: |
+          docker buildx imagetools inspect ghcr.io/intercotn/redfaro-lab:1.0.1 | head -5
+          docker buildx imagetools inspect ghcr.io/intercotn/wazuh-endpoint-ubuntu:4.14.6 | head -5
