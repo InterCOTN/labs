@@ -16,4 +16,4 @@ sudo bash lab_server_setup.sh     # dentro de la VM de práctica, nunca en su co
 | 9 | Igual que el 8, para el laboratorio de licencias y ética |
 | 10 | Igual que el 8, para el laboratorio integrador (también lo usa el caso A1) |
 
-Las contraseñas de los scripts son valores de entrenamiento válidos solo en esa VM.
+Las contraseñas de los scripts son valores de entrenamiento válidos solo en esa VM. Para probar todos los módulos de una vez en una VM real (Windows o macOS), vea [`../tools/`](../tools/).

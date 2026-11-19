@@ -7,6 +7,7 @@ Support scripts for the COTN course labs. **The lab guides, rubrics, and assessm
 |---|---|---|
 | COTN 2150 · Implementación de Aplicaciones de Redes | [`COTN2150/`](COTN2150/) | Preparación del servidor de práctica (Ubuntu 24.04) de los Módulos 4 a 10 |
 | COTN 3515 | [`COTN3515/`](COTN3515/) | Entornos de laboratorio con Docker (Módulos 2 a 10) |
+| Herramientas | [`tools/`](tools/) | Script que prueba los servidores de COTN 2150 en una máquina virtual, en Windows y macOS |
 
 ## Aviso · Notice
 Los scripts y entornos usan cuentas, contraseñas, certificados y datos **sintéticos de entrenamiento**. **No los ejecute en un servidor real ni en su computadora principal.** Úselos solo dentro de la VM del curso.
