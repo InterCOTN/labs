@@ -2,11 +2,25 @@
 
 Sirve para una computadora de estudiante o del laboratorio. Tiempo: 30–60 min más reinicios.
 
+## Instalación desatendida (computadoras del laboratorio)
+Un solo comando, en PowerShell, deja todo instalado y probado (WSL 2, Git, Python, Docker Desktop, memoria de WSL, laboratorios M3/M5/M9/M10/escaneo, Wazuh y Greenbone con su feed ya sincronizado). No hace falta token: el repositorio es público.
+```
+iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3515/lab-environment/scripts/instalar-laboratorio-windows.ps1 -OutFile $env:TEMP\instalar.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\instalar.ps1
+```
+- Pide permisos de administrador una vez y abre una ventana que **no se cierra sola**; si hay que reiniciar, lo hace y continúa al iniciar sesión.
+- Es repetible: si falla, vuelve a pegar el comando y sigue en el paso que falló.
+- Progreso: `Get-Content C:\ProgramData\COTN3515\resumen.txt`. Registro completo en la misma carpeta. Termina con `INSTALACION COMPLETA`.
+- Con un disco duro mecánico puede tardar varias horas (sobre todo Greenbone). Dejar la computadora encendida y conectada.
+- Estado: en validación en una computadora del laboratorio.
+- Docker Desktop tiene condiciones de licencia para uso institucional: confirmarlas con TI.
+
+Las secciones siguientes son el camino manual (computadoras de estudiantes).
+
 ## 0. Requisitos
 - Windows 10 (22H2) o 11, 64 bits; virtualización activada en BIOS/UEFI (Administrador de tareas → Rendimiento → CPU → "Virtualización: Habilitado").
 - 16 GB de RAM, 4 núcleos, 100 GB libres (mínimo del camino presencial).
 - Cuenta con permisos de administrador (solo para instalar).
-- Disco **SSD** (o disco duro CMR). Los discos duros SMR (p. ej. Seagate Barracuda ST2000DM008) son demasiado lentos para Wazuh y Greenbone. Prueba rápida de velocidad: `docker run --rm --entrypoint sh ghcr.io/intercotn/redfaro-lab:1.0.1 -c "dd if=/dev/zero of=/t bs=1M count=100 oflag=dsync 2>&1 | tail -1"` (referencia: SSD NVMe ~500 MB/s; disco SMR ~20 MB/s).
+- Disco **SSD** recomendado. Un disco duro mecánico (CMR o SMR) funciona, pero el primer arranque de Wazuh y Greenbone es lento. Medido en un WD Blue CMR de 1 TB: el agente de Wazuh quedó *Active* en unos 4 min y el primer arranque de Greenbone tardó unos 46 min solo en copiar sus datos (más la descarga y la sincronización del feed); en un disco SMR de Seagate el agente tardó unos 15 min. Pruebas cortas como `dd` o CrystalDiskMark (8 GiB) no distinguen SMR de CMR; la prueba real es arrancar Wazuh y ver cuánto tarda el agente en quedar *Active*.
 - Internet y ~20 GB libres para el primer arranque de Wazuh y Greenbone (descargan imágenes y feeds).
 
 ## 1. WSL 2

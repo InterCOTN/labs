@@ -73,6 +73,17 @@ $lines = Set-WslKey $lines 'memory' ("{0}GB" -f $MemoryGB)
 $lines = Set-WslKey $lines 'processors' "$Processors"
 $lines = Set-WslKey $lines 'swap' ("{0}GB" -f $SwapGB)
 
+# vm.max_map_count para Wazuh/OpenSearch: en la linea de comandos del kernel de WSL 2 queda permanente
+# (si no, hay que repetir el sysctl cada vez que Docker Desktop reinicia).
+$kcl = 'sysctl.vm.max_map_count=262144'
+$current = $lines | Where-Object { $_ -match '^\s*kernelCommandLine\s*=' } | Select-Object -First 1
+if (-not $current) {
+    $lines = Set-WslKey $lines 'kernelCommandLine' $kcl
+} elseif ($current -notmatch 'sysctl\.vm\.max_map_count') {
+    $old = ($current -replace '^\s*kernelCommandLine\s*=\s*', '').Trim().Trim('"')
+    $lines = Set-WslKey $lines 'kernelCommandLine' ("$old $kcl")
+}
+
 # ASCII: WSL lee bien el archivo sin BOM (Windows PowerShell 5.1 con UTF8 agrega BOM).
 Set-Content -Path $path -Value $lines -Encoding ASCII
 Write-Host "`nContenido de ${path}:"

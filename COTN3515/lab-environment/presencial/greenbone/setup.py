@@ -3,7 +3,7 @@
 Uso:  python setup.py up | down | password <nueva> | status
 Descarga el compose OFICIAL fijado a un commit del repositorio de documentación de Greenbone
 (no se copia al repositorio del curso)."""
-import subprocess, sys, urllib.request
+import subprocess, sys, time, urllib.request
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 COMMIT = "53ab3ba090d9ffbc066839eee09c96b9216b4ec8"   # greenbone/docs, 2026-10-28
@@ -23,7 +23,20 @@ if cmd == "up":
         if b"services:" not in data:
             sys.exit(f"La descarga no parece un compose válido ({URL}). Contenido recibido: {data[:120]!r}")
         BASE.write_bytes(data)
-    dc("pull"); dc("up", "-d")
+    dc("pull")
+    # En discos lentos los contenedores de datos tardan en quedar 'healthy' (en un disco mecanico con volumenes
+    # nuevos, hasta ~45 min); si compose se rinde antes, deja el scanner (ospd-openvas, openvasd) en estado
+    # 'Created' sin arrancar. Se reintenta cada 60 s, hasta 120 min, hasta que arranque todo.
+    limite = time.time() + 120 * 60
+    intento = 0
+    while True:
+        intento += 1
+        if dc("up", "-d").returncode == 0:
+            break
+        if time.time() > limite:
+            sys.exit("Greenbone no arrancó en 120 min. Revisa: docker ps -a")
+        print(f"\n'up' terminó con error (intento {intento}): un contenedor de datos aún no está 'healthy'. Reintento en 60 s...")
+        time.sleep(60)
     print("\nPrimera vez: la sincronización del feed puede tardar (40 min en un SSD rápido; horas en un disco lento).")
     print("Cuando Administration -> Feed Status muestre todo en 'Current', abre https://127.0.0.1 (acepta el certificado autofirmado).")
     print("Usuario: admin. Cambia la contraseña desde la carpeta lab-environment:")
