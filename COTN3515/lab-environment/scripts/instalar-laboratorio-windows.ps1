@@ -189,6 +189,13 @@ try {
     Log "COTN 3515 - instalacion desatendida. Carpeta del laboratorio: $Root"
     if ($Reanudar) { Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue }
 
+    # Al repetir o reanudar, actualiza el material ya descargado (los pasos hechos no lo vuelven a bajar).
+    if (Test-Path (Join-Path $RepoDir '.git')) {
+        $g = Exec 'git' @('-C', $RepoDir, 'pull', '--ff-only') -AllowFail
+        if ($g.Code -eq 0) { Log ("Material actualizado: " + ($g.Out.Trim() -split "`n")[-1]) }
+        else { Log "No se pudo actualizar el material (se usa la copia existente): $($g.Out.Trim())" }
+    }
+
     Step 'requisitos' {
         $os = Get-CimInstance Win32_OperatingSystem
         $cs = Get-CimInstance Win32_ComputerSystem
