@@ -81,11 +81,11 @@ function Update-Path {
     $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 }
 # Ejecuta un programa nativo sin que PowerShell 5.1 trate stderr como error. Devuelve Code y Out.
-function Exec([string]$File, [string[]]$ArgList, [switch]$AllowFail) {
+function Exec([string]$File, [string[]]$ArgList, [switch]$AllowFail, [switch]$Live) {
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $code = 0
     try {
-        $out = (& $File @ArgList 2>&1 | ForEach-Object { "$_" }) | Out-String
+        $out = (& $File @ArgList 2>&1 | ForEach-Object { if ($Live) { Write-Host "$_" }; "$_" }) | Out-String
         $code = $LASTEXITCODE
     } catch {
         # El programa no existe (p. ej. git aun no instalado): con -AllowFail se informa como codigo 9009.
@@ -180,9 +180,9 @@ function Compose([string[]]$ComposeArgs, [switch]$AllowFail) {
     Push-Location $Root
     try { Exec 'docker' (@('compose') + $ComposeArgs) -AllowFail:$AllowFail } finally { Pop-Location }
 }
-function PyRun([string[]]$PyArgs, [switch]$AllowFail) {
+function PyRun([string[]]$PyArgs, [switch]$AllowFail, [switch]$Live) {
     Push-Location $Root
-    try { Exec 'py' (@('-3', '-X', 'utf8') + $PyArgs) -AllowFail:$AllowFail } finally { Pop-Location }
+    try { Exec 'py' (@('-3', '-X', 'utf8') + $PyArgs) -AllowFail:$AllowFail -Live:$Live } finally { Pop-Location }
 }
 
 try {
@@ -375,7 +375,7 @@ try {
         Ensure-Docker
         $t0 = Get-Date
         Compose @('-f', 'compose.scan.yaml', 'up', '-d', '--wait') | Out-Null
-        $r = PyRun @('presencial\greenbone\setup.py', 'up'); Write-Host $r.Out
+        $r = PyRun @('presencial\greenbone\setup.py', 'up') -Live
         foreach ($c in 'greenbone-ospd-openvas-1', 'greenbone-openvasd-1') {
             if (-not (Exec 'docker' @('ps', '--filter', "name=$c", '--filter', 'status=running', '-q') -AllowFail).Out.Trim()) { throw "El scanner no arranco: $c no esta corriendo (docker ps -a)." }
         }
