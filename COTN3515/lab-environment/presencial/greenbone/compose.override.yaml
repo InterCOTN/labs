@@ -6,8 +6,21 @@ networks:
   scan:
     external: true
     name: redfaro-scan_scan
+# Hora local de Puerto Rico (UTC-4, sin horario de verano) en los logs de los contenedores.
+# Greenbone guarda todo en UTC; en la interfaz web cada usuario ajusta su zona en Settings -> User Settings -> Timezone.
+x-tz: &tz
+  TZ: America/Puerto_Rico
 services:
   ospd-openvas:
+    environment: *tz
     networks:
       - default
       - scan
+  gvmd:
+    environment: *tz
+  gsad:
+    environment: *tz
+  pg-gvm:
+    environment: *tz
+  openvasd:
+    environment: *tz
