@@ -11,7 +11,7 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3
 - Es repetible: si falla, vuelve a pegar el comando y sigue en el paso que falló.
 - Progreso: `Get-Content C:\ProgramData\COTN3515\resumen.txt`. Registro completo en la misma carpeta. Termina con `INSTALACION COMPLETA`.
 - Con un disco duro mecánico puede tardar varias horas (sobre todo Greenbone). Dejar la computadora encendida y conectada.
-- Estado: en validación en una computadora del laboratorio.
+- Estado: probado de cero hasta `INSTALACION COMPLETA` en una PC con SSD NVMe (31 GB de RAM, 16 CPU): Greenbone tardó ~25 min en descargar imágenes y ~33 min en sincronizar el feed (58 min en total); Wazuh y los laboratorios, menos de 1 min cada uno. Pendiente: repetir la prueba en una computadora del laboratorio con disco mecánico.
 - Docker Desktop tiene condiciones de licencia para uso institucional: confirmarlas con TI.
 
 Las secciones siguientes son el camino manual (computadoras de estudiantes).
