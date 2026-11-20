@@ -72,6 +72,12 @@ def export(dest):
         sys.exit("No se encontro ninguna imagen que guardar.")
     print(f"{len(imgs)} imagenes. Destino: {dest}")
     entradas, fallidas = [], []
+    previo = {}
+    if (dest / MANIFEST).exists():
+        try:
+            previo = {e["ref"]: e for e in json.loads((dest / MANIFEST).read_text(encoding="utf-8"))["imagenes"]}
+        except (ValueError, KeyError):
+            previo = {}
     for ref in imgs:
         print(f"\n== {ref}", flush=True)
         for intento in range(1, 6):
@@ -84,12 +90,26 @@ def export(dest):
             fallidas.append(ref)
             continue
         tar = re.sub(r"[^A-Za-z0-9._-]+", "_", ref)[:150] + ".tar"
+        e0 = previo.get(ref)
+        if e0 and e0.get("id") == image_id(ref) and (dest / tar).exists() and (dest / tar).stat().st_size == e0["bytes"]:
+            print("  sin cambios: se conserva el .tar existente", flush=True)   # repetir el export solo guarda lo nuevo
+            entradas.append(e0)
+            continue
         # --platform en 'save' existe solo en Docker recientes; si no se reconoce, se guarda sin el.
+        id_ = image_id(ref)
         if run("docker", "save", "--platform", PLATAFORMA, "-o", str(dest / tar), ref).returncode != 0 \
                 and run("docker", "save", "-o", str(dest / tar), ref).returncode != 0:
-            fallidas.append(ref)
-            continue
-        entradas.append({"ref": ref, "id": image_id(ref), "tar": tar, "bytes": (dest / tar).stat().st_size})
+            # Algunas imagenes (indices multiplataforma) no se pueden guardar con el almacen de imagenes de Docker.
+            # Respaldo: 'crane' baja solo la version amd64 directo del registro y escribe el .tar (brew install crane).
+            if shutil.which("crane") and run("crane", "pull", "--platform", PLATAFORMA, ref, str(dest / tar)).returncode == 0:
+                print("  (guardada con crane)", flush=True)
+                id_ = None   # sin id: al importar siempre se carga
+            else:
+                if not shutil.which("crane"):
+                    print("  docker save fallo y 'crane' no esta instalado (macOS: brew install crane).")
+                fallidas.append(ref)
+                continue
+        entradas.append({"ref": ref, "id": id_, "tar": tar, "bytes": (dest / tar).stat().st_size})
     (dest / MANIFEST).write_text(json.dumps({"fecha": time.strftime("%Y-%m-%d %H:%M:%S"), "imagenes": entradas}, indent=2), encoding="utf-8")
     gb = sum(e["bytes"] for e in entradas) / 1e9
     print(f"\nGuardadas {len(entradas)} imagenes ({gb:.1f} GB) en {dest}")
