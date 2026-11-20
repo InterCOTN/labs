@@ -12,7 +12,8 @@ Para los cursos presenciales: las computadoras (personales o del laboratorio) cu
 1. `docker compose -f ../compose.scan.yaml up -d --wait` (objetivo 10.79.0.20).
 2. `python greenbone/setup.py up` (primera vez: descarga y sincronización del feed, larga).
 3. `python greenbone/setup.py password <nueva>`; abrir http://127.0.0.1:9392.
-4. Apagar: `python greenbone/setup.py down`.
+4. Hora local: Greenbone guarda todo en UTC. En la interfaz, cada usuario elige su zona en *Settings → User Settings → Timezone* (`America/Puerto_Rico`, UTC-4). Los logs de los contenedores ya salen en hora de Puerto Rico (`TZ` en `compose.override.yaml`).
+5. Apagar: `python greenbone/setup.py down`.
 
 ## Wazuh (M4, M7)
 1. `python wazuh/setup.py up` → dashboard en https://localhost.
