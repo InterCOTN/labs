@@ -34,9 +34,13 @@ def apply_lab_config():
     elif not re.search(r"<vulnerability-detection>\s*<enabled>no</enabled>", text):
         sys.exit(f"no encontré <vulnerability-detection><enabled> en {conf}; revisa el tag de wazuh-docker")
 cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
-if cmd == "up":
+def fetch_repo():
     if not REPO.exists():
         run("git", "clone", "--depth", "1", "--branch", TAG, "https://github.com/wazuh/wazuh-docker.git", str(REPO))
+if cmd == "fetch":            # solo clona wazuh-docker (lo usa scripts/cache-imagenes.py)
+    fetch_repo()
+elif cmd == "up":
+    fetch_repo()
     apply_lab_config()
     if not certs_ready():
         run("docker", "compose", "-f", "generate-indexer-certs.yml", "run", "--rm", "generator", cwd=SN)

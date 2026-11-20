@@ -3,7 +3,7 @@
 Uso:  python setup.py up | down | password <nueva> | status
 Descarga el compose OFICIAL fijado a un commit del repositorio de documentación de Greenbone
 (no se copia al repositorio del curso)."""
-import subprocess, sys, time, urllib.request
+import os, subprocess, sys, time, urllib.request
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 COMMIT = "53ab3ba090d9ffbc066839eee09c96b9216b4ec8"   # greenbone/docs, 2026-10-28
@@ -16,18 +16,26 @@ def need_scan_net():
     if r.returncode:
         sys.exit("Primero enciende el objetivo: docker compose -f ../../compose.scan.yaml up -d --wait")
 cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
-if cmd == "up":
-    need_scan_net()
+def fetch_compose():
     if not BASE.exists() or b"services:" not in BASE.read_bytes():
         data = urllib.request.urlopen(URL, timeout=60).read()
         if b"services:" not in data:
             sys.exit(f"La descarga no parece un compose válido ({URL}). Contenido recibido: {data[:120]!r}")
         BASE.write_bytes(data)
+if cmd == "fetch":            # solo descarga el compose oficial (lo usa scripts/cache-imagenes.py)
+    fetch_compose()
+elif cmd == "up":
+    need_scan_net()
+    fetch_compose()
     # El registro de Greenbone responde a veces 502/timeout y 'compose pull' aborta TODO al primer error (son ~19
     # imagenes en paralelo). Se baja imagen por imagen y se reintentan solo las que fallan, hasta 120 min.
     r = subprocess.run(["docker", "compose", "-p", "greenbone", "-f", str(BASE), "-f", str(HERE / "compose.override.yaml"),
                         "config", "--images"], capture_output=True, text=True)
     pendientes = sorted(set(l.strip() for l in r.stdout.splitlines() if l.strip()))
+    if not os.environ.get("GREENBONE_ACTUALIZAR"):
+        # Solo se descargan las que faltan (p. ej. si se cargaron desde la cache del laboratorio, sin tocar el registro).
+        # Para traer la version mas reciente de todas: GREENBONE_ACTUALIZAR=1
+        pendientes = [i for i in pendientes if subprocess.run(["docker", "image", "inspect", i], capture_output=True).returncode != 0]
     if r.returncode or not pendientes:
         sys.exit("No se pudo obtener la lista de imágenes de Greenbone: " + r.stderr.strip())
     limite = time.time() + 120 * 60

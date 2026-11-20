@@ -14,6 +14,26 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3
 - Estado: probado de cero hasta `INSTALACION COMPLETA` en una PC con SSD NVMe (31 GB de RAM, 16 CPU): Greenbone tardó ~25 min en descargar imágenes y ~33 min en sincronizar el feed (58 min en total); Wazuh y los laboratorios, menos de 1 min cada uno. Pendiente: repetir la prueba en una computadora del laboratorio con disco mecánico.
 - Docker Desktop tiene condiciones de licencia para uso institucional: confirmarlas con TI.
 
+### Caché de imágenes en el NAS (opcional, recomendado)
+Evita depender del registro de Greenbone (que a veces devuelve 502 y no deja instalar) y acelera la instalación; además fija la misma versión de imágenes y del feed para todo el grupo.
+
+**Una vez (en tu computadora, con el registro funcionando):** hace falta Docker, Git y Python 3; no hace falta levantar Greenbone ni Wazuh (el script obtiene solo sus archivos). Siempre guarda imágenes `linux/amd64`, aunque lo corras desde un Mac Apple Silicon.
+- Windows: `py scripts\cache-imagenes.py export \\NAS\cotn3515\imagenes`
+- macOS (conecta antes el recurso con una cuenta con escritura: Finder → Ir → Conectarse al servidor → `smb://NAS/cotn3515`): `python3 scripts/cache-imagenes.py export /Volumes/cotn3515/imagenes`
+
+Guarda todas las imágenes (laboratorios, Wazuh, Greenbone) como `.tar` con un `imagenes.json` que anota la fecha. Repítelo para refrescar versiones (p. ej. al empezar el semestre).
+
+**Carpeta compartida en el NAS:** recurso SMB `cotn3515` (subcarpeta `imagenes`) con una cuenta de **solo lectura** para el laboratorio (`cotn`) y otra con escritura para quien exporta (`ha`). Windows bloquea por defecto el acceso de invitado, por eso se usa una cuenta.
+
+**En cada computadora del laboratorio**, en PowerShell **como administrador** (la conexión debe hacerse en la misma ventana elevada que lanza el instalador):
+```
+net use \\NAS\cotn3515 /user:cotn * /persistent:yes
+iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3515/lab-environment/scripts/instalar-laboratorio-windows.ps1 -OutFile $env:TEMP\instalar.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\instalar.ps1 -Cache \\NAS\cotn3515\imagenes
+```
+(`*` pide la contraseña; no queda escrita en el comando ni en el registro del instalador.) El instalador carga desde la caché las imágenes que falten y, si la caché no está disponible o alguna imagen no carga, usa el registro como antes. `setup.py` de Greenbone solo descarga las imágenes que no están; para forzar la versión más reciente: variable `GREENBONE_ACTUALIZAR=1`.
+
+Estado: sin probar. Al validarla, comprobar en `resumen.txt`/registro que las imágenes con versión fijada (`redfaro-lab:1.0.1@sha256:...`) quedan reconocidas tras `docker load`; si no, se bajarán del registro y el script lo avisa.
+
 Las secciones siguientes son el camino manual (computadoras de estudiantes).
 
 ## 0. Requisitos
