@@ -14,6 +14,27 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3
 - Estado: probado de cero hasta `INSTALACION COMPLETA` en una PC con SSD NVMe (31 GB de RAM, 16 CPU): Greenbone tardó ~25 min en descargar imágenes y ~33 min en sincronizar el feed (58 min en total); Wazuh y los laboratorios, menos de 1 min cada uno. Pendiente: repetir la prueba en una computadora del laboratorio con disco mecánico.
 - Docker Desktop tiene condiciones de licencia para uso institucional: confirmarlas con TI.
 
+### Caché de imágenes en el NAS (opcional, recomendado)
+Evita depender del registro de Greenbone (que a veces devuelve 502 y no deja instalar) y acelera la instalación; además fija la misma versión de imágenes y del feed para todo el grupo.
+
+**Una vez (en tu computadora, con el laboratorio ya instalado y el registro funcionando):**
+```
+cd C:\COTN3515\labs\COTN3515\lab-environment
+py scripts\cache-imagenes.py export \\NAS\cotn3515\imagenes
+```
+Descarga todas las imágenes (laboratorios, Wazuh, Greenbone) y las guarda como `.tar` con un `imagenes.json` que anota la fecha. Repítelo cuando quieras refrescar las versiones (p. ej. al empezar el semestre).
+
+**Carpeta compartida recomendada en el NAS:** recurso SMB `cotn3515`, subcarpeta `imagenes`; una cuenta de **solo lectura** para las computadoras del laboratorio (por ejemplo `cotn-lectura`) y una cuenta aparte con escritura para ti. Windows bloquea por defecto el acceso de invitado, por eso se usa una cuenta.
+
+**En cada computadora del laboratorio**, en PowerShell **como administrador** (la conexión debe hacerse en la misma ventana elevada que lanza el instalador):
+```
+net use \\NAS\cotn3515 /user:cotn-lectura * /persistent:yes
+iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3515/lab-environment/scripts/instalar-laboratorio-windows.ps1 -OutFile $env:TEMP\instalar.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\instalar.ps1 -Cache \\NAS\cotn3515\imagenes
+```
+(`*` pide la contraseña; no queda escrita en el comando ni en el registro del instalador.) El instalador carga desde la caché las imágenes que falten y, si la caché no está disponible o alguna imagen no carga, usa el registro como antes. `setup.py` de Greenbone solo descarga las imágenes que no están; para forzar la versión más reciente: variable `GREENBONE_ACTUALIZAR=1`.
+
+Estado: sin probar. Al validarla, comprobar en `resumen.txt`/registro que las imágenes con versión fijada (`redfaro-lab:1.0.1@sha256:...`) quedan reconocidas tras `docker load`; si no, se bajarán del registro y el script lo avisa.
+
 Las secciones siguientes son el camino manual (computadoras de estudiantes).
 
 ## 0. Requisitos

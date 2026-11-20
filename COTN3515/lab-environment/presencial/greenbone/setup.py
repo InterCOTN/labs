@@ -3,7 +3,7 @@
 Uso:  python setup.py up | down | password <nueva> | status
 Descarga el compose OFICIAL fijado a un commit del repositorio de documentación de Greenbone
 (no se copia al repositorio del curso)."""
-import subprocess, sys, time, urllib.request
+import os, subprocess, sys, time, urllib.request
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 COMMIT = "53ab3ba090d9ffbc066839eee09c96b9216b4ec8"   # greenbone/docs, 2026-10-28
@@ -28,6 +28,10 @@ if cmd == "up":
     r = subprocess.run(["docker", "compose", "-p", "greenbone", "-f", str(BASE), "-f", str(HERE / "compose.override.yaml"),
                         "config", "--images"], capture_output=True, text=True)
     pendientes = sorted(set(l.strip() for l in r.stdout.splitlines() if l.strip()))
+    if not os.environ.get("GREENBONE_ACTUALIZAR"):
+        # Solo se descargan las que faltan (p. ej. si se cargaron desde la cache del laboratorio, sin tocar el registro).
+        # Para traer la version mas reciente de todas: GREENBONE_ACTUALIZAR=1
+        pendientes = [i for i in pendientes if subprocess.run(["docker", "image", "inspect", i], capture_output=True).returncode != 0]
     if r.returncode or not pendientes:
         sys.exit("No se pudo obtener la lista de imágenes de Greenbone: " + r.stderr.strip())
     limite = time.time() + 120 * 60

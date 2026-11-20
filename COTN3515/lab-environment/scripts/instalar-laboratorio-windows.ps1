@@ -23,6 +23,7 @@
 .NOTES
   Es AUTONOMO: basta este archivo. Si no esta dentro de la carpeta lab-environment, clona el material del
   laboratorio desde https://github.com/InterCOTN/labs (publico). Use -Rama para elegir la rama (por defecto main).
+  Opcional: -Cache <carpeta o \\servidor\recurso> carga las imagenes Docker desde una cache (ver scripts\cache-imagenes.py).
   Ejecutelo con la cuenta del estudiante (con permisos de administrador): pedira elevacion una vez.
   Docker Desktop tiene condiciones de licencia para uso institucional: confirmelas con TI.
 #>
@@ -34,6 +35,7 @@ param(
     [int]$MinDiskMBs = 5,
     [string]$Rama = 'main',
     [string]$Carpeta = '',
+    [string]$Cache = '',
     [switch]$Reanudar,
     [switch]$Elevado
 )
@@ -47,6 +49,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) {
     $a = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -MemoryGB $MemoryGB -Processors $Processors -SwapGB $SwapGB -MinDiskMBs $MinDiskMBs -Rama `"$Rama`""
     if ($Carpeta) { $a += " -Carpeta `"$Carpeta`"" }
+    if ($Cache) { $a += " -Cache `"$Cache`"" }
     if ($Reanudar) { $a += ' -Reanudar' }
     $a += ' -Elevado'
     Write-Host 'Se abrira una ventana de administrador donde corre el instalador y permanecera abierta al terminar.'
@@ -113,7 +116,7 @@ function Register-Resume {
     $who = "$env:USERDOMAIN\$env:USERNAME"
     $copy = Join-Path $Data 'instalar-laboratorio-windows.ps1'          # copia estable: el original puede estar en un USB o en Descargas
     if ($PSCommandPath -ne $copy) { Copy-Item -Path $PSCommandPath -Destination $copy -Force }
-    $act = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -MemoryGB {1} -Processors {2} -SwapGB {3} -MinDiskMBs {4} -Reanudar' -f $copy, $MemoryGB, $Processors, $SwapGB, $MinDiskMBs)
+    $act = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "{0}" -MemoryGB {1} -Processors {2} -SwapGB {3} -MinDiskMBs {4} -Reanudar{5}' -f $copy, $MemoryGB, $Processors, $SwapGB, $MinDiskMBs, $(if ($Cache) { ' -Cache "' + $Cache + '"' } else { '' }))
     $trg = New-ScheduledTaskTrigger -AtLogOn -User $who
     $pri = New-ScheduledTaskPrincipal -UserId $who -LogonType Interactive -RunLevel Highest
     Register-ScheduledTask -TaskName $TaskName -Action $act -Trigger $trg -Principal $pri -Force | Out-Null
@@ -310,6 +313,21 @@ try {
             Exec 'docker' @('run', '--rm', '--privileged', '--pid=host', 'alpine:3.20', 'sysctl', '-w', 'vm.max_map_count=262144') | Out-Null
             Note 'vm.max_map_count ajustado en caliente (se pierde al reiniciar Docker)'
         } else { Note "vm.max_map_count=$mm (persistente por .wslconfig)" }
+    }
+
+    # Cache de imagenes (opcional): carpeta local o compartida (p. ej. del NAS) creada con scripts\cache-imagenes.py export.
+    # Carga en Docker las imagenes que falten, para no depender del registro. Si algo falla, se usa el registro como siempre.
+    if ($Cache) {
+        Ensure-Docker
+        if (Test-Path -LiteralPath $Cache) {
+            Log "Cargando imagenes desde la cache: $Cache"
+            $c = PyRun @('scripts\cache-imagenes.py', 'import', $Cache) -AllowFail -Live
+            if ($c.Code -ne 0) { Log "La cache no se pudo usar del todo (codigo $($c.Code)); se usara el registro." }
+            Note "cache de imagenes: $Cache"
+        } else {
+            Log "No se puede leer la cache $Cache (red, permisos o nombre); se usara el registro."
+            Note "cache de imagenes NO disponible: $Cache"
+        }
     }
 
     Step 'disco' {
