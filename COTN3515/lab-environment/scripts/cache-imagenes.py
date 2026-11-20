@@ -9,7 +9,7 @@ Windows, macOS y Linux.
 Siempre se descargan imagenes linux/amd64 (las del laboratorio), tambien si se exporta desde un Mac Apple Silicon.
 Lista de imagenes: las de los compose del laboratorio, Greenbone y Wazuh (se leen con 'docker compose config --images').
 Tras 'import' se verifica cada imagen; las que no queden disponibles se bajaran del registro como siempre."""
-import json, os, re, subprocess, sys, time
+import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 LAB = Path(__file__).resolve().parent.parent
@@ -120,5 +120,9 @@ def importar(src):
 if __name__ == "__main__":
     if len(sys.argv) != 3 or sys.argv[1] not in ("export", "import"):
         sys.exit(__doc__)
+    if not shutil.which("docker"):
+        sys.exit("No encuentro el comando 'docker'. Instala/abre Docker (Docker Desktop, o Colima en macOS) y vuelve a intentarlo.")
+    if run("docker", "info", capture=True).returncode != 0:
+        sys.exit("Docker esta instalado pero no responde. Abre Docker Desktop (o inicia Colima) y espera a que arranque.")
     carpeta = Path(sys.argv[2])
     export(carpeta) if sys.argv[1] == "export" else importar(carpeta)
