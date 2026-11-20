@@ -16,13 +16,17 @@ def need_scan_net():
     if r.returncode:
         sys.exit("Primero enciende el objetivo: docker compose -f ../../compose.scan.yaml up -d --wait")
 cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
-if cmd == "up":
-    need_scan_net()
+def fetch_compose():
     if not BASE.exists() or b"services:" not in BASE.read_bytes():
         data = urllib.request.urlopen(URL, timeout=60).read()
         if b"services:" not in data:
             sys.exit(f"La descarga no parece un compose válido ({URL}). Contenido recibido: {data[:120]!r}")
         BASE.write_bytes(data)
+if cmd == "fetch":            # solo descarga el compose oficial (lo usa scripts/cache-imagenes.py)
+    fetch_compose()
+elif cmd == "up":
+    need_scan_net()
+    fetch_compose()
     # El registro de Greenbone responde a veces 502/timeout y 'compose pull' aborta TODO al primer error (son ~19
     # imagenes en paralelo). Se baja imagen por imagen y se reintentan solo las que fallan, hasta 120 min.
     r = subprocess.run(["docker", "compose", "-p", "greenbone", "-f", str(BASE), "-f", str(HERE / "compose.override.yaml"),

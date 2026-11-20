@@ -17,18 +17,17 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3
 ### Caché de imágenes en el NAS (opcional, recomendado)
 Evita depender del registro de Greenbone (que a veces devuelve 502 y no deja instalar) y acelera la instalación; además fija la misma versión de imágenes y del feed para todo el grupo.
 
-**Una vez (en tu computadora, con el laboratorio ya instalado y el registro funcionando):**
-```
-cd C:\COTN3515\labs\COTN3515\lab-environment
-py scripts\cache-imagenes.py export \\NAS\cotn3515\imagenes
-```
-Descarga todas las imágenes (laboratorios, Wazuh, Greenbone) y las guarda como `.tar` con un `imagenes.json` que anota la fecha. Repítelo cuando quieras refrescar las versiones (p. ej. al empezar el semestre).
+**Una vez (en tu computadora, con el registro funcionando):** hace falta Docker, Git y Python 3; no hace falta levantar Greenbone ni Wazuh (el script obtiene solo sus archivos). Siempre guarda imágenes `linux/amd64`, aunque lo corras desde un Mac Apple Silicon.
+- Windows: `py scripts\cache-imagenes.py export \\NAS\cotn3515\imagenes`
+- macOS (conecta antes el recurso con una cuenta con escritura: Finder → Ir → Conectarse al servidor → `smb://NAS/cotn3515`): `python3 scripts/cache-imagenes.py export /Volumes/cotn3515/imagenes`
 
-**Carpeta compartida recomendada en el NAS:** recurso SMB `cotn3515`, subcarpeta `imagenes`; una cuenta de **solo lectura** para las computadoras del laboratorio (por ejemplo `cotn-lectura`) y una cuenta aparte con escritura para ti. Windows bloquea por defecto el acceso de invitado, por eso se usa una cuenta.
+Guarda todas las imágenes (laboratorios, Wazuh, Greenbone) como `.tar` con un `imagenes.json` que anota la fecha. Repítelo para refrescar versiones (p. ej. al empezar el semestre).
+
+**Carpeta compartida en el NAS:** recurso SMB `cotn3515` (subcarpeta `imagenes`) con una cuenta de **solo lectura** para el laboratorio (`cotn`) y otra con escritura para quien exporta (`ha`). Windows bloquea por defecto el acceso de invitado, por eso se usa una cuenta.
 
 **En cada computadora del laboratorio**, en PowerShell **como administrador** (la conexión debe hacerse en la misma ventana elevada que lanza el instalador):
 ```
-net use \\NAS\cotn3515 /user:cotn-lectura * /persistent:yes
+net use \\NAS\cotn3515 /user:cotn * /persistent:yes
 iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3515/lab-environment/scripts/instalar-laboratorio-windows.ps1 -OutFile $env:TEMP\instalar.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\instalar.ps1 -Cache \\NAS\cotn3515\imagenes
 ```
 (`*` pide la contraseña; no queda escrita en el comando ni en el registro del instalador.) El instalador carga desde la caché las imágenes que falten y, si la caché no está disponible o alguna imagen no carga, usa el registro como antes. `setup.py` de Greenbone solo descarga las imágenes que no están; para forzar la versión más reciente: variable `GREENBONE_ACTUALIZAR=1`.

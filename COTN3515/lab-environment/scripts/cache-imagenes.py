@@ -6,6 +6,7 @@ Windows, macOS y Linux.
                                               Hacerlo UNA vez, con el registro funcionando, tras instalar el laboratorio.
   python cache-imagenes.py import <carpeta>   Carga en Docker las imagenes de <carpeta> que falten. Lo usa el instalador.
 
+Siempre se descargan imagenes linux/amd64 (las del laboratorio), tambien si se exporta desde un Mac Apple Silicon.
 Lista de imagenes: las de los compose del laboratorio, Greenbone y Wazuh (se leen con 'docker compose config --images').
 Tras 'import' se verifica cada imagen; las que no queden disponibles se bajaran del registro como siempre."""
 import json, os, re, subprocess, sys, time
@@ -16,6 +17,7 @@ GB = LAB / "presencial" / "greenbone"
 WZ = LAB / "presencial" / "wazuh"
 SN = WZ / "wazuh-docker" / "single-node"
 MANIFEST = "imagenes.json"
+PLATAFORMA = "linux/amd64"   # las computadoras del laboratorio son x86_64, aunque se exporte desde un Mac Apple Silicon
 
 
 def run(*a, cwd=None, capture=False):
@@ -31,7 +33,16 @@ def config_images(args, cwd, env=None):
     return [l.strip() for l in r.stdout.splitlines() if l.strip()]
 
 
+def preparar():
+    """Obtiene (sin levantar nada) los archivos compose de Greenbone y Wazuh si faltan."""
+    if not (GB / "compose.greenbone.yaml").exists():
+        run(sys.executable, str(GB / "setup.py"), "fetch")
+    if not SN.exists():
+        run(sys.executable, str(WZ / "setup.py"), "fetch")
+
+
 def lista_imagenes():
+    preparar()
     imgs = set()
     for f in ("compose.yaml", "compose.m3.yaml", "compose.m5.yaml", "compose.m10.yaml", "compose.scan.yaml"):
         imgs.update(config_images(["-f", f], LAB))
@@ -64,7 +75,7 @@ def export(dest):
     for ref in imgs:
         print(f"\n== {ref}", flush=True)
         for intento in range(1, 6):
-            if run("docker", "pull", ref).returncode == 0:
+            if run("docker", "pull", "--platform", PLATAFORMA, ref).returncode == 0:
                 break
             if intento < 5:
                 print(f"  fallo la descarga (intento {intento}); reintento en 30 s...", flush=True)
@@ -73,7 +84,9 @@ def export(dest):
             fallidas.append(ref)
             continue
         tar = re.sub(r"[^A-Za-z0-9._-]+", "_", ref)[:150] + ".tar"
-        if run("docker", "save", "-o", str(dest / tar), ref).returncode != 0:
+        # --platform en 'save' existe solo en Docker recientes; si no se reconoce, se guarda sin el.
+        if run("docker", "save", "--platform", PLATAFORMA, "-o", str(dest / tar), ref).returncode != 0 \
+                and run("docker", "save", "-o", str(dest / tar), ref).returncode != 0:
             fallidas.append(ref)
             continue
         entradas.append({"ref": ref, "id": image_id(ref), "tar": tar, "bytes": (dest / tar).stat().st_size})
