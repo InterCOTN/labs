@@ -4,7 +4,7 @@
 name: redfaro
 
 x-lab: &lab
-  image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+  image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1}
   pull_policy: missing
   restart: "no"
 

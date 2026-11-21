@@ -9,7 +9,7 @@ volumes:
   m3lab: {}
 services:
   web:
-    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1}
     pull_policy: missing
     command: ["/app/nginx-web.sh"]
     cap_drop: [ALL]
@@ -19,7 +19,7 @@ services:
     ports: ["127.0.0.1:8080:80"]
     healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
   workstation:
-    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1}
     pull_policy: missing
     command: ["sleep", "infinity"]
     working_dir: /lab
