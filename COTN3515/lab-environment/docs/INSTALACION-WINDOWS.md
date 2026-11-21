@@ -32,7 +32,7 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/InterCOTN/labs/main/COTN3
 ```
 (`*` pide la contraseña; no queda escrita en el comando ni en el registro del instalador.) El instalador carga desde la caché las imágenes que falten y, si la caché no está disponible o alguna imagen no carga, usa el registro como antes. `setup.py` de Greenbone solo descarga las imágenes que no están; para forzar la versión más reciente: variable `GREENBONE_ACTUALIZAR=1`.
 
-Estado: sin probar. Al validarla, comprobar en `resumen.txt`/registro que las imágenes con versión fijada (`redfaro-lab:1.0.1@sha256:...`) quedan reconocidas tras `docker load`; si no, se bajarán del registro y el script lo avisa.
+Estado: probado en el flujo exportar (Mac) → NAS → `cache-imagenes.py import` (Windows) → `docker compose up -d --pull never`: los laboratorios arrancan sin tocar el registro. Notas: las imágenes se referencian por etiqueta (`redfaro-lab:1.0.1`), no por digest, porque `docker load` no conserva el digest; `docker save` no puede guardar algunas imágenes de Greenbone (se usa `crane` como respaldo). Pendiente: correr el instalador completo con `-Cache` en una computadora del laboratorio con el recurso del UNAS Pro.
 
 Las secciones siguientes son el camino manual (computadoras de estudiantes).
 
