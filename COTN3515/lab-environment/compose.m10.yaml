@@ -7,7 +7,7 @@ networks:
     ipam: {config: [{subnet: 10.78.0.0/24}]}
 services:
   target:
-    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1}
     pull_policy: missing
     command: ["/app/target10-init.sh"]
     cap_drop: [ALL]
@@ -15,7 +15,7 @@ services:
     networks: {lab10: {ipv4_address: 10.78.0.20}}
     healthcheck: {test: ["CMD", "test", "-f", "/tmp/ready"], interval: 1s, retries: 120}
   analyst:
-    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1@sha256:67b795cc07ab3b4119eb15583c4e9aae6802a3c4c1053418284ce08bf921e7eb}
+    image: ${REDFARO_IMAGE:-ghcr.io/intercotn/redfaro-lab:1.0.1}
     pull_policy: missing
     command: ["sleep", "infinity"]
     cap_drop: [ALL]
